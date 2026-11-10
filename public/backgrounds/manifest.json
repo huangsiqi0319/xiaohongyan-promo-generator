@@ -1,0 +1,32 @@
+[
+  {
+    "file": "lake-01.jpg",
+    "sha256": "f4a28f2ef7d51892301a4e765c21e3e287d6a64fe52b28dfedc7f12d32d109f5",
+    "source": "xiaohongyan.zip (user supplied; exact original bytes)"
+  },
+  {
+    "file": "lake-02.jpg",
+    "sha256": "4905cc7972be4a8252d691481654247ba7bec0a098837c985812b08c224a3c62",
+    "source": "xiaohongyan.zip (user supplied; exact original bytes)"
+  },
+  {
+    "file": "lake-03.jpg",
+    "sha256": "a66c755f9dc33e82328078007b91538757f0f554b1432f085cb6572c46a16c94",
+    "source": "xiaohongyan.zip (user supplied; exact original bytes)"
+  },
+  {
+    "file": "lake-04.jpg",
+    "sha256": "375ad0d2eed9f9a5537eb13de0eb4e12c480419741cfa57abd500ba5e9d50b6d",
+    "source": "xiaohongyan.zip (user supplied; exact original bytes)"
+  },
+  {
+    "file": "lake-05.jpg",
+    "sha256": "724b4eedc49f41c8aba7999220a28ba1da62d50a10319af42c961277f2518fb0",
+    "source": "xiaohongyan.zip (user supplied; exact original bytes)"
+  },
+  {
+    "file": "lake-06.jpg",
+    "sha256": "1400f0cb6daf1529d277d1079814bb6f0398b5bd304a14c1bc2c1939ee2c8601",
+    "source": "xiaohongyan.zip (user supplied; exact original bytes)"
+  }
+]
