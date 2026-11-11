@@ -1,4 +1,5 @@
 import type { Course, Design, TemplateKind } from "../types";
+import { isScheduleStyle } from "./schedule-layout";
 import { DEFAULT_BACKGROUND_ID } from "./brand";
 
 export const TEMPLATE_NAMES = {
@@ -124,6 +125,7 @@ export function isDesign(value: unknown): value is Design {
   return (
     strings(d, ["id", "name", "title", "dateRange", "note"]) &&
     Boolean(d.id) &&
+    isScheduleStyle(d.scheduleStyle) &&
     ["schedule", "pricing", "event"].includes(String(d.kind)) &&
     ["editorial", "airy"].includes(String(d.layout)) &&
     [1080, 1440, 1920].includes(Number(d.height)) &&

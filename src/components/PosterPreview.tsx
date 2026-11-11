@@ -174,7 +174,12 @@ export const PosterPreview = forwardRef<PosterHandle, Props>(
             <Image size={14} /> 1080 × {design.height} px{" "}
             <span className="caption-separator">/</span> 高清 PNG
           </span>
-          <span>预览即导出效果</span>
+          <span>
+            {design.kind === "schedule" && status && !status.error
+              ? `正文 ${status.bodyFont} px · `
+              : ""}
+            预览即导出效果
+          </span>
         </div>
         {status?.overflow && (
           <div role="alert" className="overflow-alert">
@@ -182,8 +187,9 @@ export const PosterPreview = forwardRef<PosterHandle, Props>(
             <div>
               <strong>内容超出安全区域</strong>
               <p>
-                请切换至 1080 ×
-                1920、选择「雅序」布局，或精简内容。为保证文字完整，当前暂不可导出。
+                {status.overflowReason ||
+                  "请切换至 1080 × 1920、选择「雅序」布局，或精简内容。"}
+                为保证文字完整，当前暂不可导出。
               </p>
             </div>
           </div>

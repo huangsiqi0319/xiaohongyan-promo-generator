@@ -1,5 +1,5 @@
 import type { AssetView, Design, RenderResult } from "../types";
-import { DAYS, sortCourses } from "./model";
+import { planSchedule } from "./schedule-layout";
 import { fitBodyFont, wrapText } from "./layout";
 
 const INK = "#514b48";
@@ -119,88 +119,46 @@ function contain(
   ctx.drawImage(img, x + (width - w) / 2, y + (height - h) / 2, w, h);
 }
 
-function scheduleBody(
+function drawSchedule(
   ctx: Context,
   d: Design,
   y: number,
-  size: number,
-  draw: boolean,
-): number {
-  const start = y,
-    airy = d.layout === "airy";
-  const rows = sortCourses(d.courses);
-  if (!rows.length)
-    return text(ctx, "暂无课程，请在左侧添加本周课程。", 88, y + 28, {
-      size,
-      draw,
-    });
-  const widths = airy ? [116, 192, 340, 256] : [100, 172, 328, 128, 176];
-  const xs = widths.reduce<number[]>(
-    (arr, w, i) => [...arr, (arr[i - 1] ?? 88) + (i ? widths[i - 1] : 0)],
-    [],
-  );
-  const headings = airy
-    ? ["星期", "时间", "课程", "授课 / 教室"]
-    : ["星期", "上课时间", "课程名称", "教师", "教室"];
-  headings.forEach((h, i) =>
-    text(ctx, h, xs[i], y, {
-      size: 23,
-      width: widths[i] - 16,
+  plan: ReturnType<typeof planSchedule>,
+) {
+  const headings = ["星期", "上课时间", "课程名称", "教师", "教室"];
+  headings.forEach((value, i) =>
+    text(ctx, value, plan.xs[i], y, {
+      size: 20,
+      width: plan.widths[i] - 12,
       color: MUTED,
-      draw,
     }),
   );
-  y += 48;
-  if (draw) rule(ctx, 88, y - 12, 904);
-  let lastDay = -1;
-  for (const row of rows) {
-    const time =
-      d.height === 1080
-        ? `${row.time}–${row.endTime}`
-        : `${row.time}\n${row.endTime}`;
-    const values = airy
-      ? [
-          row.day === lastDay ? "·" : DAYS[row.day - 1],
-          time,
-          row.name || "未命名课程",
-          `${row.teacher || "待定"}\n${row.room || "待定"}`,
-        ]
-      : [
-          row.day === lastDay ? "·" : DAYS[row.day - 1],
-          time,
-          row.name || "未命名课程",
-          row.teacher || "待定",
-          row.room || "待定",
-        ];
-    const heights = values.map((value, i) =>
-      text(ctx, value, xs[i], y + 14, {
-        size: i === 1 ? 23 : size,
-        width: widths[i] - 18,
-        lineHeight: 1.4,
-        draw: false,
-      }),
-    );
-    const rh = Math.max(...heights) + (airy ? 38 : 28);
-    if (draw) {
-      if (lastDay !== row.day && !d.backgroundId) {
-        ctx.fillStyle = "rgba(231, 235, 231, .22)";
-        ctx.fillRect(72, y, 936, rh);
-      }
-      values.forEach((value, i) =>
-        text(ctx, value, xs[i], y + 14, {
-          size: i === 1 ? 23 : size,
-          width: widths[i] - 18,
-          lineHeight: 1.4,
-          color: i === 0 ? MUTED : INK,
-        }),
-      );
-      if (!d.backgroundId)
-        rule(ctx, 88, y + rh, 904, "rgba(100, 101, 96, .16)");
-    }
-    y += rh;
-    lastDay = row.day;
+  rule(ctx, 88, y + 36, 904);
+  if (!plan.rows.length) {
+    text(ctx, "暂无课程，请在左侧添加本周课程。", 88, y + 62, { size: 26 });
+    return;
   }
-  return y - start;
+  for (const row of plan.rows) {
+    const rowY = y + 48 + plan.rows.indexOf(row) * plan.rowHeight;
+    row.values.forEach((value, i) => {
+      ctx.save();
+      // In an invalid preview, keep cells separate; export remains blocked until it fits.
+      ctx.beginPath();
+      ctx.rect(plan.xs[i], rowY, plan.widths[i] - 12, plan.rowHeight);
+      ctx.clip();
+      font(ctx, plan.fontSize);
+      ctx.fillStyle = i === 0 ? MUTED : INK;
+      ctx.textBaseline = "top";
+      ctx.fillText(
+        value,
+        plan.xs[i],
+        rowY + (plan.rowHeight - plan.fontSize * 1.45) / 2,
+      );
+      ctx.restore();
+    });
+    if (!d.backgroundId)
+      rule(ctx, 88, rowY + plan.rowHeight, 904, "rgba(100,101,96,.12)");
+  }
 }
 
 const money = (v: string) =>
@@ -532,14 +490,26 @@ export async function renderPoster(
       })
     : 0;
   const footerY = d.height - 98 - footerH;
-  const measureBody = (f: number) =>
+  const available = footerY - bodyY - 42;
+  const schedule =
     d.kind === "schedule"
-      ? scheduleBody(ctx, d, bodyY, f, false)
-      : d.kind === "pricing"
-        ? pricingBody(ctx, d, bodyY, f, false)
-        : eventBody(ctx, d, bodyY, f, false, photo, qr);
-  const fit = fitBodyFont(footerY - bodyY - 42, measureBody);
-  const bodyH = measureBody(fit.fontSize);
+      ? planSchedule(
+          d,
+          (value, size) => {
+            font(ctx, size);
+            return ctx.measureText(value).width;
+          },
+          available,
+        )
+      : null;
+  const measureBody = (f: number) =>
+    d.kind === "pricing"
+      ? pricingBody(ctx, d, bodyY, f, false)
+      : eventBody(ctx, d, bodyY, f, false, photo, qr);
+  const fit = schedule
+    ? { fontSize: schedule.fontSize, overflow: schedule.overflow }
+    : fitBodyFont(available, measureBody);
+  const bodyH = schedule ? schedule.height : measureBody(fit.fontSize);
   if (bg) {
     ctx.save();
     ctx.translate(540, bodyY + bodyH / 2);
@@ -552,7 +522,7 @@ export async function renderPoster(
     ctx.fillRect(-1, -1, 2, 2);
     ctx.restore();
   }
-  if (d.kind === "schedule") scheduleBody(ctx, d, bodyY, fit.fontSize, true);
+  if (schedule) drawSchedule(ctx, d, bodyY, schedule);
   else if (d.kind === "pricing") pricingBody(ctx, d, bodyY, fit.fontSize, true);
   else eventBody(ctx, d, bodyY, fit.fontSize, true, photo, qr);
   if (!fit.overflow) {
@@ -570,6 +540,7 @@ export async function renderPoster(
   return {
     overflow: fit.overflow || bodyY < 0 || footerY < bodyY,
     bodyFont: fit.fontSize,
+    overflowReason: schedule?.reason,
     contentBottom: bodyY + bodyH,
   };
 }

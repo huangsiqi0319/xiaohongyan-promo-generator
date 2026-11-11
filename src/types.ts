@@ -32,6 +32,7 @@ export interface EventInfo {
   registration: string;
 }
 export interface Design {
+  scheduleStyle?: ScheduleStyle;
   id: string;
   kind: TemplateKind;
   name: string;
@@ -72,8 +73,15 @@ export interface AssetView extends Omit<Asset, "blob"> {
   url: string;
 }
 export interface RenderResult {
+  overflowReason?: string;
   overflow: boolean;
   error?: string;
   bodyFont: number;
   contentBottom: number;
+}
+export interface ScheduleStyle {
+  mode: "auto" | "manual";
+  fontSize: number;
+  courseWidth: number;
+  rowGap: number;
 }

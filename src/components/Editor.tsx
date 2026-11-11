@@ -3,6 +3,7 @@ import type { Design, Price } from "../types";
 import { DAYS, uid } from "../lib/model";
 import { Field, SectionHeading, TextField } from "./Fields";
 import { useState } from "react";
+import { getScheduleStyle } from "../lib/schedule-layout";
 
 export function Editor({
   design: d,
@@ -15,6 +16,7 @@ export function Editor({
     new Set<string>([d.courses[0]?.id, d.prices[0]?.id].filter(Boolean)),
   );
   const [tab, setTab] = useState<"content" | "style">("content");
+  const scheduleStyle = getScheduleStyle(d);
   const patchCourse = (id: string, patch: object) =>
     onChange({
       courses: d.courses.map((c) => (c.id === id ? { ...c, ...patch } : c)),
@@ -462,6 +464,114 @@ export function Editor({
         </div>
       ) : (
         <div className="editor-content">
+          {d.kind === "schedule" && (
+            <section className="form-section">
+              <SectionHeading title="单行排版与字号" />
+              <Field label="字号模式">
+                <select
+                  aria-label="字号模式"
+                  value={scheduleStyle.mode}
+                  onChange={(e) =>
+                    onChange({
+                      scheduleStyle: {
+                        ...scheduleStyle,
+                        mode: e.target.value as "auto" | "manual",
+                        fontSize:
+                          e.target.value === "auto"
+                            ? Math.max(18, scheduleStyle.fontSize)
+                            : scheduleStyle.fontSize,
+                      },
+                    })
+                  }
+                >
+                  <option value="auto">自动适配单行</option>
+                  <option value="manual">手动字号</option>
+                </select>
+              </Field>
+              <Field
+                label={`${scheduleStyle.mode === "auto" ? "字号上限" : "手动字号"} · ${scheduleStyle.fontSize} px`}
+                hint={
+                  scheduleStyle.mode === "auto"
+                    ? "按最长字段统一缩小，最低18px；整节课保持一行。"
+                    : "使用你指定的字号。放不下时会提示，不会省略文字。"
+                }
+              >
+                <input
+                  aria-label="课表字号"
+                  type="range"
+                  min={scheduleStyle.mode === "auto" ? 18 : 16}
+                  max="32"
+                  step="1"
+                  value={scheduleStyle.fontSize}
+                  onChange={(e) =>
+                    onChange({
+                      scheduleStyle: {
+                        ...scheduleStyle,
+                        fontSize: Number(e.target.value),
+                      },
+                    })
+                  }
+                />
+              </Field>
+              <Field
+                label={`课程栏宽度 · ${scheduleStyle.courseWidth}%`}
+                hint="课程栏加宽后，教师与教室栏会相应变窄。"
+              >
+                <input
+                  aria-label="课程栏宽度"
+                  type="range"
+                  min="40"
+                  max="54"
+                  step="1"
+                  value={scheduleStyle.courseWidth}
+                  onChange={(e) =>
+                    onChange({
+                      scheduleStyle: {
+                        ...scheduleStyle,
+                        courseWidth: Number(e.target.value),
+                      },
+                    })
+                  }
+                />
+              </Field>
+              <Field label={`行间距 · ${scheduleStyle.rowGap} px`}>
+                <input
+                  aria-label="课表行间距"
+                  type="range"
+                  min="12"
+                  max="44"
+                  step="1"
+                  value={scheduleStyle.rowGap}
+                  onChange={(e) =>
+                    onChange({
+                      scheduleStyle: {
+                        ...scheduleStyle,
+                        rowGap: Number(e.target.value),
+                      },
+                    })
+                  }
+                />
+              </Field>
+              <button
+                className="secondary-button full"
+                onClick={() =>
+                  onChange({
+                    scheduleStyle: {
+                      mode: "auto",
+                      fontSize: 28,
+                      courseWidth: 46,
+                      rowGap: d.layout === "airy" ? 32 : 24,
+                    },
+                  })
+                }
+              >
+                恢复自动排版
+              </button>
+              <p className="section-help" style={{ marginTop: 12 }}>
+                以上字号为1080px导出图片中的实际大小。星期、时间、课名、教师、教室各占一列，不换行。
+              </p>
+            </section>
+          )}
           <section className="form-section">
             <SectionHeading number="01" title="品牌版式" />
             <p className="section-help">两种排版，同一种小鸿雁的气质。</p>
