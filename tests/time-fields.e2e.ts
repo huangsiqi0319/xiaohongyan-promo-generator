@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("窄屏编辑时间有独立两列，星期单独一行，输入框不重叠并可保存", async ({
+test("窄屏星期和两个时间保持原有同一行，输入框留缝不重叠并可保存", async ({
   page,
 }) => {
   for (const width of [320, 390, 430]) {
@@ -12,7 +12,7 @@ test("窄屏编辑时间有独立两列，星期单独一行，输入框不重�
     const dayBox = (await day.boundingBox())!,
       startBox = (await start.boundingBox())!,
       endBox = (await end.boundingBox())!;
-    expect(startBox.y).toBeGreaterThanOrEqual(dayBox.y + dayBox.height + 12);
+    expect(Math.abs(startBox.y - dayBox.y)).toBeLessThan(1);
     expect(Math.abs(startBox.y - endBox.y)).toBeLessThan(1);
     expect(startBox.x + startBox.width).toBeLessThanOrEqual(endBox.x - 8);
     expect(endBox.x + endBox.width).toBeLessThanOrEqual(width - 20);
