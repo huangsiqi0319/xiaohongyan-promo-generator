@@ -9,6 +9,17 @@ const measure = (value: string, size: number) =>
     0,
   );
 describe("单行课表", () => {
+  it("同一星期后续课程的星期栏留空，不显示圆点，其他字段仍然对齐", () => {
+    const d = createDesign("schedule");
+    d.courses = [
+      { ...d.courses[0], id: "later", day: 3, time: "15:45" },
+      { ...d.courses[0], id: "first", day: 3, time: "14:00" },
+      { ...d.courses[0], id: "next-day", day: 4, time: "19:30" },
+    ];
+    const p = planSchedule(d, measure, 1000);
+    expect(p.rows.map((r) => r.values[0])).toEqual(["周三", "", "周四"]);
+    expect(p.rows[1].values[1]).toBe("15:45–20:00");
+  });
   it("旧项目缺少设置时沿用自动单行，不改课程数据", () => {
     const d = createDesign("schedule");
     delete d.scheduleStyle;

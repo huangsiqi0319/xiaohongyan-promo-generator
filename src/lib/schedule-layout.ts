@@ -57,7 +57,7 @@ export function planSchedule(
   const rows = [...d.courses]
     .sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
     .map((c) => {
-      const day = lastDay === c.day ? "·" : `周${"一二三四五六日"[c.day - 1]}`;
+      const day = lastDay === c.day ? "" : `周${"一二三四五六日"[c.day - 1]}`;
       lastDay = c.day;
       return {
         id: c.id,

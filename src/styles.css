@@ -484,9 +484,28 @@ button:not(:disabled):hover {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
-.form-grid.three {
-  grid-template-columns: 0.8fr 1fr 1fr;
-  gap: 8px;
+.form-grid.course-time-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.course-time-grid > .field:first-child {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+.course-time-grid input[type="time"] {
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.course-time-grid input[type="time"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: center;
+}
+.course-time-grid input[type="time"]::-webkit-datetime-edit {
+  min-width: 0;
+  padding: 0;
 }
 .form-grid .field {
   margin-bottom: 15px;
@@ -1375,9 +1394,6 @@ button:not(:disabled):hover {
   }
   .panel-title > span {
     display: none;
-  }
-  .form-grid.three {
-    gap: 5px;
   }
   .field input[type="time"] {
     padding: 7px 3px;

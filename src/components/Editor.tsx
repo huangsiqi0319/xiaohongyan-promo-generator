@@ -137,7 +137,7 @@ export function Editor({
                             patchCourse(c.id, { name: e.target.value })
                           }
                         />
-                        <div className="form-grid three">
+                        <div className="form-grid course-time-grid">
                           <Field label="星期">
                             <select
                               aria-label={`课程 ${i + 1} 星期`}
