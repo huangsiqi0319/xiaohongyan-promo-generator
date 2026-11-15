@@ -13,6 +13,39 @@ function toDataURL(blob: Blob): Promise<string> {
 }
 export async function makeBackup(state: MaterialState): Promise<Blob> {
   const assets = await listAssets();
+  return serializeBackup(state, assets);
+}
+
+export async function makeProjectBackup(
+  state: MaterialState,
+  projectId: string,
+): Promise<Blob> {
+  const project = state.projects.find((p) => p.id === projectId);
+  if (!project) throw new Error("该设计已不存在。");
+  const builtins = new Set(BRAND_BACKGROUNDS.map((a) => a.id));
+  const ids = new Set(
+    [
+      project.backgroundId,
+      project.logoId,
+      project.photoId,
+      project.qrId,
+    ].filter((id) => id && !builtins.has(id)),
+  );
+  const assets = ids.size
+    ? (await listAssets()).filter((a) => ids.has(a.id))
+    : [];
+  if ([...ids].some((id) => !assets.some((a) => a.id === id)))
+    throw new Error("有上传素材暂时无法读取，请重新导入后再转移设计。");
+  return serializeBackup(
+    { version: 1, projects: [project], activeId: project.id, previous: {} },
+    assets,
+  );
+}
+
+async function serializeBackup(
+  state: MaterialState,
+  assets: Asset[],
+): Promise<Blob> {
   const serialized = await Promise.all(
     assets.map(async ({ blob, ...metadata }) => ({
       ...metadata,

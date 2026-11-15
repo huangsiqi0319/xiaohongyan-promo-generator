@@ -3,8 +3,11 @@ export function downloadBlob(blob: Blob, name: string) {
     url = URL.createObjectURL(blob);
   link.href = url;
   link.download = name;
+  link.hidden = true;
+  document.body.appendChild(link);
   link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 export const safeFilename = (value: string) =>

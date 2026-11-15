@@ -42,10 +42,17 @@ export function parseState(raw: string): MaterialState {
 export function loadState(storage: Reader): {
   state: MaterialState;
   error?: string;
+  savedAt?: number;
 } {
   try {
     const raw = storage.getItem(STORAGE_KEY);
-    return { state: raw ? parseState(raw) : initialState() };
+    const state = raw ? parseState(raw) : initialState();
+    return {
+      state,
+      savedAt: raw
+        ? Math.max(...state.projects.map((p) => p.updatedAt))
+        : undefined,
+    };
   } catch {
     return {
       state: initialState(),

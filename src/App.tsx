@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowDownToLine,
@@ -22,7 +22,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import type { RenderResult, TemplateKind } from "./types";
+import type { MaterialState, RenderResult, TemplateKind } from "./types";
 import { duplicateDesign, TEMPLATE_NAMES, uid } from "./lib/model";
 import { useDesigns } from "./hooks/useDesigns";
 import { useAssets } from "./hooks/useAssets";
@@ -33,6 +33,10 @@ import { Editor } from "./components/Editor";
 import { AssetLibrary } from "./components/AssetLibrary";
 import { PosterPreview, type PosterHandle } from "./components/PosterPreview";
 import { SectionHeading } from "./components/Fields";
+import { ImageSaveDialog } from "./components/ImageSaveDialog";
+import { ContinueDialog } from "./components/ContinueDialog";
+import { UtilityDialog } from "./components/UtilityDialog";
+import { hasResumeLink, resumeFile } from "./lib/resume-link";
 
 export default function App() {
   const store = useDesigns(),
@@ -46,6 +50,14 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [transferState, setTransferState] = useState<MaterialState | null>(
+    null,
+  );
+  const [incoming, setIncoming] = useState<{ file: File; name: string } | null>(
+    null,
+  );
+  const [recoveryMessage, setRecoveryMessage] = useState("");
   const preview = useRef<PosterHandle>(null),
     importInput = useRef<HTMLInputElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -58,6 +70,36 @@ export default function App() {
     (status: RenderResult | null) => setRenderStatus(status),
     [],
   );
+  useEffect(() => {
+    let live = true,
+      version = 0;
+    async function detect() {
+      const v = ++version;
+      if (!hasResumeLink(location.hash)) return;
+      try {
+        const file = await resumeFile(location.hash);
+        const data = await readBackup(file);
+        if (live && v === version)
+          setIncoming({ file, name: data.state.projects[0].name });
+      } catch (e) {
+        if (live && v === version)
+          notify(e instanceof Error ? e.message : "无法读取续编链接。");
+      }
+    }
+    void detect();
+    window.addEventListener("hashchange", detect);
+    return () => {
+      live = false;
+      version++;
+      window.removeEventListener("hashchange", detect);
+    };
+  }, [notify]);
+  function clearResume() {
+    setIncoming(null);
+    const url = new URL(location.href);
+    url.hash = "";
+    history.replaceState(null, "", url);
+  }
   const canExport = Boolean(
     renderStatus &&
     !renderStatus.overflow &&
@@ -70,8 +112,16 @@ export default function App() {
     setExporting(true);
     try {
       const blob = await preview.current!.exportPNG();
-      downloadBlob(blob, `${safeFilename(d.name)}_1080x${d.height}.png`);
-      notify("高清 PNG 已生成，请在浏览器下载中查看。");
+      const name = `${safeFilename(d.name)}_1080x${d.height}.png`;
+      if (
+        matchMedia("(max-width: 760px)").matches ||
+        /iPhone|iPad|Android/i.test(navigator.userAgent)
+      )
+        setImageFile(new File([blob], name, { type: "image/png" }));
+      else {
+        downloadBlob(blob, name);
+        notify(`已请求浏览器下载「${name}」。`);
+      }
     } catch (e) {
       notify(e instanceof Error ? e.message : "导出失败，请重试。");
     } finally {
@@ -89,8 +139,8 @@ export default function App() {
       setBackupBusy(false);
     }
   }
-  async function importBackup(file?: File) {
-    if (!file) return;
+  async function importBackup(file?: File, resuming = false) {
+    if (!file) return false;
     setBackupBusy(true);
     try {
       const imported = await readBackup(file);
@@ -103,7 +153,7 @@ export default function App() {
       await media.importMany(assets);
       const projects = imported.state.projects.map((p) => {
         const copy = duplicateDesign(p);
-        copy.name = `${p.name} · 已导入`;
+        copy.name = resuming ? p.name : `${p.name} · 已导入`;
         for (const key of [
           "backgroundId",
           "logoId",
@@ -113,10 +163,26 @@ export default function App() {
           copy[key] = copy[key] ? (mapping.get(copy[key]!) ?? copy[key]) : null;
         return copy;
       });
-      store.mergeProjects(projects);
-      notify(`已导入 ${projects.length} 个设计，保留了原有项目。`);
+      const saved = store.mergeProjects(projects);
+      if (!saved) {
+        notify(
+          "设计已读取，但尚未保存到此浏览器。请保留续编链接或项目文件，并使用“跨浏览器继续”备份。",
+        );
+        return "memory" as const;
+      }
+      notify(
+        resuming
+          ? "设计已恢复，后续编辑会自动保存到此浏览器。"
+          : `已导入 ${projects.length} 个设计，保留了原有项目。`,
+      );
+      return true;
     } catch (e) {
       notify(e instanceof Error ? e.message : "备份读取失败。");
+      if (resuming)
+        setRecoveryMessage(
+          e instanceof Error ? e.message : "恢复失败，请保留续编链接重试。",
+        );
+      return false;
     } finally {
       setBackupBusy(false);
       if (importInput.current) importInput.current.value = "";
@@ -169,14 +235,23 @@ export default function App() {
         <div className="top-actions">
           <span
             className={`save-status ${store.saveError ? "failed" : ""}`}
-            title={store.saveError || "内容保存在当前浏览器"}
+            title={
+              store.saveError ||
+              "内容保存在当前浏览器，换浏览器请使用跨浏览器继续"
+            }
           >
             {store.saveError ? (
               <AlertCircle size={14} />
             ) : (
               <CheckCheck size={15} />
             )}
-            <span>{store.saveError ? "保存异常" : "所有更改已保存"}</span>
+            <span>
+              {store.saveError
+                ? "保存异常"
+                : store.lastSavedAt
+                  ? "所有更改已保存"
+                  : "编辑后自动保存"}
+            </span>
           </span>
           <button
             className="secondary-button save-button"
@@ -186,6 +261,12 @@ export default function App() {
           >
             <Save size={15} />
             <span>保存</span>
+          </button>
+          <button
+            className="secondary-button transfer-desktop"
+            onClick={() => setTransferState(store.state)}
+          >
+            跨浏览器继续
           </button>
           <button
             className="primary-button"
@@ -198,10 +279,38 @@ export default function App() {
             ) : (
               <Download size={17} />
             )}
-            <span>{exporting ? "正在导出" : "导出高清 PNG"}</span>
+            {exporting ? (
+              <span>正在生成</span>
+            ) : (
+              <>
+                <span className="desktop-export-label">导出高清 PNG</span>
+                <span className="mobile-export-label">生成高清图片</span>
+              </>
+            )}
           </button>
         </div>
       </header>
+      <div className={`mobile-persist-bar ${store.saveError ? "failed" : ""}`}>
+        <span>
+          {store.saveError
+            ? "未保存，请查看下方提示"
+            : store.lastSavedAt
+              ? "已自动保存到此浏览器"
+              : "编辑后自动保存到此浏览器"}
+        </span>
+        <button
+          aria-label="立即保存当前设计"
+          onClick={() => {
+            if (store.save())
+              notify("当前设计已保存到此浏览器。换浏览器请使用续编链接。");
+          }}
+        >
+          立即保存
+        </button>
+        <button onClick={() => setTransferState(store.state)}>
+          跨浏览器继续
+        </button>
+      </div>
       {(store.saveError || media.error) && (
         <div className="storage-alert" role="alert">
           <AlertCircle size={16} />
@@ -495,6 +604,53 @@ export default function App() {
             <X size={15} />
           </button>
         </div>
+      )}
+      {imageFile && (
+        <ImageSaveDialog file={imageFile} onClose={() => setImageFile(null)} />
+      )}
+      {transferState && (
+        <ContinueDialog
+          state={transferState}
+          onClose={() => setTransferState(null)}
+        />
+      )}
+      {incoming && (
+        <UtilityDialog title="恢复续编设计" onClose={() => setIncoming(null)}>
+          <p className="utility-help">
+            发现设计「{incoming.name}
+            」。将作为新设计打开，此浏览器已有项目会保留。
+          </p>
+          {recoveryMessage && (
+            <p className="utility-message" role="alert">
+              {recoveryMessage}
+            </p>
+          )}
+          <div className="utility-actions">
+            <button
+              className="secondary-button"
+              disabled={backupBusy}
+              onClick={() => setIncoming(null)}
+            >
+              暂不打开
+            </button>
+            <button
+              className="primary-button"
+              disabled={backupBusy}
+              onClick={async () => {
+                const result = await importBackup(incoming.file, true);
+                if (result === true) {
+                  clearResume();
+                  setPanel("editor");
+                } else if (result === "memory") {
+                  setIncoming(null);
+                  setPanel("editor");
+                }
+              }}
+            >
+              打开这份设计
+            </button>
+          </div>
+        </UtilityDialog>
       )}
       {deleteId && (
         <div className="modal-backdrop" onClick={() => setDeleteId(null)}>

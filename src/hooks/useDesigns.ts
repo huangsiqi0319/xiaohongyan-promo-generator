@@ -19,19 +19,27 @@ export function useDesigns() {
   const [state, setState] = useState(loaded.state);
   const current = useRef(state);
   const [saveError, setSaveError] = useState(loaded.error ?? "");
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(
+    "savedAt" in loaded && typeof loaded.savedAt === "number"
+      ? loaded.savedAt
+      : null,
+  );
   const blocked = useRef(Boolean(loaded.error));
   const edit = useRef({ id: "", time: 0 });
   const active = state.projects.find((p) => p.id === state.activeId)!;
 
-  function commit(next: MaterialState) {
+  function commit(next: MaterialState): boolean {
     current.current = next;
     setState(next);
-    if (blocked.current) return;
+    if (blocked.current) return false;
     try {
       saveState(localStorage, next);
+      setLastSavedAt(Date.now());
       setSaveError("");
+      return true;
     } catch {
       setSaveError("保存失败：浏览器空间不足或存储被禁用。请下载备份后重试。");
+      return false;
     }
   }
   function update(patch: Partial<Design>, projectId?: string) {
@@ -117,6 +125,7 @@ export function useDesigns() {
     if (blocked.current) return false;
     try {
       saveState(localStorage, current.current);
+      setLastSavedAt(Date.now());
       setSaveError("");
       return true;
     } catch {
@@ -131,12 +140,13 @@ export function useDesigns() {
   }
   function mergeProjects(projects: Design[]) {
     const s = current.current;
-    commit({
+    const saved = commit({
       ...s,
       projects: [...s.projects, ...projects],
       activeId: projects[0].id,
     });
     edit.current = { id: "", time: 0 };
+    return saved;
   }
   function resumeSaving() {
     blocked.current = false;
@@ -146,6 +156,7 @@ export function useDesigns() {
     state,
     active,
     saveError,
+    lastSavedAt,
     hasPrevious: Object.hasOwn(state.previous, state.activeId),
     update,
     select,
