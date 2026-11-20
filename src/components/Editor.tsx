@@ -1,9 +1,11 @@
-import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from "lucide-react";
-import type { Design, Price } from "../types";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import type { Design } from "../types";
 import { DAYS, uid } from "../lib/model";
 import { Field, SectionHeading, TextField } from "./Fields";
 import { useState } from "react";
 import { getScheduleStyle } from "../lib/schedule-layout";
+import { PricingEditor } from "./PricingEditor";
+import { getPricingTable } from "../lib/pricing";
 
 export function Editor({
   design: d,
@@ -21,15 +23,6 @@ export function Editor({
     onChange({
       courses: d.courses.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     });
-  const patchPrice = (id: string, patch: Partial<Price>) =>
-    onChange({
-      prices: d.prices.map((p) => (p.id === id ? { ...p, ...patch } : p)),
-    });
-  const movePrice = (index: number, delta: number) => {
-    const rows = [...d.prices];
-    [rows[index], rows[index + delta]] = [rows[index + delta], rows[index]];
-    onChange({ prices: rows });
-  };
 
   return (
     <>
@@ -74,13 +67,15 @@ export function Editor({
                 d.kind === "schedule"
                   ? "课程安排"
                   : d.kind === "pricing"
-                    ? "价格项目"
+                    ? "表格分区"
                     : "活动内容"
               }
               meta={
                 d.kind !== "event" && (
                   <span className="count-label">
-                    {d.kind === "schedule" ? d.courses.length : d.prices.length}{" "}
+                    {d.kind === "schedule"
+                      ? d.courses.length
+                      : getPricingTable(d).sections.length}{" "}
                     项
                   </span>
                 )
@@ -225,173 +220,7 @@ export function Editor({
               </>
             )}
             {d.kind === "pricing" && (
-              <>
-                <p className="section-help">
-                  用上下箭头调整顺序，价格可填写数字或文字。
-                </p>
-                <div className="item-list">
-                  {d.prices.map((p, i) => (
-                    <details
-                      className="edit-item"
-                      key={p.id}
-                      open={openIds.has(p.id)}
-                      onToggle={(e) => {
-                        const open = e.currentTarget.open;
-                        setOpenIds((ids) => {
-                          const next = new Set(ids);
-                          if (open) next.add(p.id);
-                          else next.delete(p.id);
-                          return next;
-                        });
-                      }}
-                    >
-                      <summary>
-                        <span className="row-number">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span className="item-summary">
-                          <strong>{p.name || "新价格项目"}</strong>
-                          <small>
-                            {p.category} · 套餐 {p.packagePrice || "待填写"}
-                          </small>
-                        </span>
-                        <button
-                          className="icon-button"
-                          disabled={i === 0}
-                          aria-label={`上移价格 ${i + 1}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            movePrice(i, -1);
-                          }}
-                        >
-                          <ArrowUp size={14} />
-                        </button>
-                        <button
-                          className="icon-button"
-                          disabled={i === d.prices.length - 1}
-                          aria-label={`下移价格 ${i + 1}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            movePrice(i, 1);
-                          }}
-                        >
-                          <ArrowDown size={14} />
-                        </button>
-                        <button
-                          className="icon-button"
-                          aria-label={`删除价格 ${i + 1}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            onChange({
-                              prices: d.prices.filter((x) => x.id !== p.id),
-                            });
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <ChevronDown className="details-chevron" size={15} />
-                      </summary>
-                      <div className="item-fields">
-                        <div className="form-grid">
-                          <TextField
-                            label="价格类别"
-                            aria-label={`价格 ${i + 1} 类别`}
-                            value={p.category}
-                            onChange={(e) =>
-                              patchPrice(p.id, { category: e.target.value })
-                            }
-                          />
-                          <TextField
-                            label={`课程 ${i + 1} 名称`}
-                            value={p.name}
-                            onChange={(e) =>
-                              patchPrice(p.id, { name: e.target.value })
-                            }
-                          />
-                        </div>
-                        <div className="form-grid">
-                          <TextField
-                            label="单次价格"
-                            aria-label={`价格 ${i + 1} 单次`}
-                            value={p.single}
-                            onChange={(e) =>
-                              patchPrice(p.id, { single: e.target.value })
-                            }
-                          />
-                          <TextField
-                            label="套餐价格"
-                            aria-label={`价格 ${i + 1} 套餐`}
-                            value={p.packagePrice}
-                            onChange={(e) =>
-                              patchPrice(p.id, { packagePrice: e.target.value })
-                            }
-                          />
-                        </div>
-                        <div className="form-grid">
-                          <TextField
-                            label="课时数量"
-                            aria-label={`价格 ${i + 1} 课时`}
-                            value={p.sessions}
-                            onChange={(e) =>
-                              patchPrice(p.id, { sessions: e.target.value })
-                            }
-                          />
-                          <TextField
-                            label="有效期限"
-                            aria-label={`价格 ${i + 1} 有效期`}
-                            value={p.validity}
-                            onChange={(e) =>
-                              patchPrice(p.id, { validity: e.target.value })
-                            }
-                          />
-                        </div>
-                        <TextField
-                          label="优惠 / 套餐说明"
-                          aria-label={`价格 ${i + 1} 优惠说明`}
-                          value={p.offer}
-                          onChange={(e) =>
-                            patchPrice(p.id, { offer: e.target.value })
-                          }
-                        />
-                        <TextField
-                          label="项目备注"
-                          aria-label={`价格 ${i + 1} 备注`}
-                          value={p.note}
-                          onChange={(e) =>
-                            patchPrice(p.id, { note: e.target.value })
-                          }
-                        />
-                      </div>
-                    </details>
-                  ))}
-                </div>
-                <button
-                  className="add-row"
-                  onClick={() => {
-                    const id = uid();
-                    setOpenIds((ids) => new Set([...ids, id]));
-                    onChange({
-                      prices: [
-                        ...d.prices,
-                        {
-                          id,
-                          category: "",
-                          name: "新价格项目",
-                          single: "",
-                          packagePrice: "",
-                          sessions: "",
-                          offer: "",
-                          validity: "",
-                          note: "",
-                        },
-                      ],
-                    });
-                  }}
-                >
-                  <Plus size={16} />
-                  添加价格项目
-                </button>
-              </>
+              <PricingEditor design={d} onChange={onChange} />
             )}
             {d.kind === "event" && (
               <div className="event-fields">
@@ -442,8 +271,27 @@ export function Editor({
           </section>
           <section className="form-section">
             <SectionHeading number="03" title="补充说明" />
+            {d.kind === "pricing" && (
+              <label className="check-field">
+                <input
+                  type="checkbox"
+                  aria-label="显示底部备注"
+                  checked={getPricingTable(d).showFooterNote}
+                  onChange={(e) =>
+                    onChange({
+                      pricingTable: {
+                        ...getPricingTable(d),
+                        showFooterNote: e.target.checked,
+                      },
+                    })
+                  }
+                />
+                <span>显示底部备注（关闭后内容保留）</span>
+              </label>
+            )}
             <Field label="底部备注">
               <textarea
+                aria-label="底部备注"
                 value={d.note}
                 rows={3}
                 onChange={(e) => onChange({ note: e.target.value })}

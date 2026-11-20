@@ -1,12 +1,16 @@
 import type { AssetView, Design, RenderResult } from "../types";
 import { planSchedule } from "./schedule-layout";
 import { fitBodyFont, wrapText } from "./layout";
+import { renderPricingPage } from "./render-pricing";
+import { POSTER_THEME } from "./poster-theme";
 
-const INK = "#514b48";
-const MUTED = "#777571";
-const LINE = "rgba(100, 101, 96, .25)";
-const SERIF = '"Noto Serif SC", serif';
-const SANS = '"Noto Sans SC", sans-serif';
+const {
+  ink: INK,
+  muted: MUTED,
+  line: LINE,
+  serif: SERIF,
+  sans: SANS,
+} = POSTER_THEME;
 type Context = CanvasRenderingContext2D;
 type TextOptions = {
   center?: boolean;
@@ -53,7 +57,13 @@ function text(
   }
   return lines.length * size * lineHeight;
 }
-function rule(ctx: Context, x: number, y: number, width: number, color = LINE) {
+function rule(
+  ctx: Context,
+  x: number,
+  y: number,
+  width: number,
+  color: string = LINE,
+) {
   ctx.strokeStyle = color;
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -161,171 +171,6 @@ function drawSchedule(
   }
 }
 
-const money = (v: string) =>
-  v.trim() ? (/^[\d,.\s]+$/.test(v) ? `¥ ${v}` : v) : "—";
-function pricingBody(
-  ctx: Context,
-  d: Design,
-  y: number,
-  size: number,
-  draw: boolean,
-): number {
-  const start = y,
-    airy = d.layout === "airy";
-  if (!d.prices.length)
-    return text(ctx, "暂无价格项目，请在左侧添加。", 88, y + 28, {
-      size,
-      draw,
-    });
-  if (d.height === 1080 && !airy) {
-    for (const [label, x, width] of [
-      ["课程 / 类别", 88, 370],
-      ["单次", 500, 208],
-      ["套餐 / 课时", 736, 256],
-    ] as const)
-      text(ctx, label, x, y, { size: 21, width, color: MUTED, draw });
-    y += 44;
-    if (draw) rule(ctx, 88, y - 10, 904);
-    for (const item of d.prices) {
-      const top = y + 10;
-      const labelH = text(ctx, item.category || "课程", 88, top, {
-        size: 20,
-        width: 370,
-        lineHeight: 1.4,
-        color: MUTED,
-        draw,
-      });
-      const nameH = text(ctx, item.name || "未命名课程", 88, top + labelH + 3, {
-        size: size + 4,
-        width: 370,
-        serif: true,
-        weight: 600,
-        lineHeight: 1.4,
-        draw,
-      });
-      const a = text(ctx, money(item.single), 500, top + 15, {
-        size,
-        width: 208,
-        serif: true,
-        lineHeight: 1.4,
-        draw,
-      });
-      const b = text(
-        ctx,
-        `${money(item.packagePrice)}${item.sessions ? ` / ${item.sessions}` : ""}`,
-        736,
-        top + 15,
-        { size, width: 256, serif: true, lineHeight: 1.4, draw },
-      );
-      const detail = [
-        item.offer,
-        item.validity ? `有效期 ${item.validity}` : "",
-        item.note,
-      ]
-        .filter(Boolean)
-        .join(" · ");
-      const detailY = Math.max(
-        top + labelH + nameH + 12,
-        top + 15 + Math.max(a, b) + 12,
-      );
-      y =
-        detailY +
-        (detail
-          ? text(ctx, detail, 88, detailY, {
-              size: 23,
-              lineHeight: 1.4,
-              color: MUTED,
-              draw,
-            })
-          : 0) +
-        20;
-      if (draw) rule(ctx, 88, y, 904);
-    }
-    return y - start;
-  }
-  if (draw) rule(ctx, 88, y - 8, 904);
-  for (const item of d.prices) {
-    const top = y + 26;
-    const labelH = text(ctx, item.category || "课程", 88, top, {
-      size: 21,
-      width: airy ? 904 : 370,
-      color: MUTED,
-      draw,
-    });
-    const nameH = text(ctx, item.name || "未命名课程", 88, top + labelH + 5, {
-      size: size + 6,
-      width: airy ? 904 : 370,
-      serif: true,
-      weight: 600,
-      draw,
-    });
-    const detail = [
-      item.offer,
-      item.validity ? `有效期 ${item.validity}` : "",
-      item.note,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    let bottom: number;
-    if (airy) {
-      const priceY = top + labelH + nameH + 20;
-      const a = text(ctx, `单次  ${money(item.single)}`, 88, priceY, {
-        size,
-        width: 420,
-        draw,
-      });
-      const b = text(
-        ctx,
-        `套餐  ${money(item.packagePrice)}${item.sessions ? ` / ${item.sessions}` : ""}`,
-        540,
-        priceY,
-        { size, width: 452, draw },
-      );
-      const detailY = priceY + Math.max(a, b) + 12;
-      bottom =
-        detailY +
-        (detail
-          ? text(ctx, detail, 88, detailY, { size: 23, color: MUTED, draw })
-          : 0);
-    } else {
-      text(ctx, "单次", 500, top, { size: 21, color: MUTED, width: 176, draw });
-      text(ctx, "套餐", 736, top, { size: 21, color: MUTED, width: 256, draw });
-      const a = text(ctx, money(item.single), 500, top + 38, {
-        size: size + 4,
-        width: 208,
-        serif: true,
-        draw,
-      });
-      const b = text(ctx, money(item.packagePrice), 736, top + 38, {
-        size: size + 12,
-        width: 256,
-        serif: true,
-        draw,
-      });
-      const sessionsH = item.sessions
-        ? text(ctx, item.sessions, 736, top + 38 + b, {
-            size: 23,
-            width: 256,
-            color: MUTED,
-            draw,
-          })
-        : 0;
-      const detailY = Math.max(
-        top + labelH + nameH + 12,
-        top + 38 + Math.max(a, b + sessionsH) + 12,
-      );
-      bottom =
-        detailY +
-        (detail
-          ? text(ctx, detail, 88, detailY, { size: 23, color: MUTED, draw })
-          : 0);
-    }
-    y = bottom + 28;
-    if (draw) rule(ctx, 88, y, 904, "rgba(100, 101, 96, .20)");
-  }
-  return y - start;
-}
-
 function eventBody(
   ctx: Context,
   d: Design,
@@ -428,22 +273,24 @@ export async function renderPoster(
   // Only overlays are drawn. The uploaded background pixels themselves are never regenerated.
   ctx.fillStyle = `rgba(249,247,242,${bg ? (d.mist / 100) * 0.88 : 0.35})`;
   ctx.fillRect(0, 0, 1080, d.height);
-  if (logo) contain(ctx, logo, bg ? 450 : 88, 58, 180, 66);
+  const centered = Boolean(bg) || d.kind === "pricing";
+  if (logo) contain(ctx, logo, centered ? 450 : 88, 58, 180, 66);
   else
     text(ctx, "小 鸿 雁", 88, 64, {
       size: 31,
       serif: true,
       weight: 600,
-      width: bg ? 904 : 240,
-      center: Boolean(bg),
+      width: centered ? 904 : 240,
+      center: centered,
     });
-  text(ctx, "DANCE  &  ART", bg ? 88 : 774, bg ? 112 : 72, {
-    size: bg ? 16 : 19,
-    width: bg ? 904 : 230,
+  text(ctx, "DANCE  &  ART", centered ? 88 : 774, centered ? 112 : 72, {
+    size: centered ? 16 : 19,
+    width: centered ? 904 : 230,
     color: MUTED,
-    center: Boolean(bg),
+    center: centered,
   });
-  rule(ctx, bg ? 516 : 88, 148, bg ? 48 : 904);
+  rule(ctx, centered ? 516 : 88, 148, centered ? 48 : 904);
+  if (d.kind === "pricing") return renderPricingPage(ctx, d, Boolean(bg));
   const titleSize = d.height === 1080 ? 62 : 76;
   const titleY = 176;
   const titleH = text(ctx, d.title || "未命名物料", 88, titleY, {
@@ -451,7 +298,7 @@ export async function renderPoster(
     serif: true,
     weight: bg ? 400 : 600,
     lineHeight: 1.35,
-    center: Boolean(bg),
+    center: centered,
   });
   const english = {
     schedule: "WEEKLY SCHEDULE",
@@ -463,13 +310,13 @@ export async function renderPoster(
     size: 24,
     width: bg ? 904 : 562,
     color: MUTED,
-    center: Boolean(bg),
+    center: centered,
   });
   text(ctx, english, bg ? 88 : 692, bg ? metaY + dateH + 4 : metaY + 3, {
     size: 17,
     width: bg ? 904 : 300,
     color: MUTED,
-    center: Boolean(bg),
+    center: centered,
   });
   const bodyY =
     metaY + Math.max(dateH, 36) + (d.height === 1080 ? 30 : 54) + (bg ? 24 : 0);
@@ -503,9 +350,7 @@ export async function renderPoster(
         )
       : null;
   const measureBody = (f: number) =>
-    d.kind === "pricing"
-      ? pricingBody(ctx, d, bodyY, f, false)
-      : eventBody(ctx, d, bodyY, f, false, photo, qr);
+    eventBody(ctx, d, bodyY, f, false, photo, qr);
   const fit = schedule
     ? { fontSize: schedule.fontSize, overflow: schedule.overflow }
     : fitBodyFont(available, measureBody);
@@ -523,7 +368,6 @@ export async function renderPoster(
     ctx.restore();
   }
   if (schedule) drawSchedule(ctx, d, bodyY, schedule);
-  else if (d.kind === "pricing") pricingBody(ctx, d, bodyY, fit.fontSize, true);
   else eventBody(ctx, d, bodyY, fit.fontSize, true, photo, qr);
   if (!fit.overflow) {
     rule(ctx, 88, footerY - 24, 904);

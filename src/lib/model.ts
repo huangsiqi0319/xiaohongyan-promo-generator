@@ -1,6 +1,7 @@
 import type { Course, Design, TemplateKind } from "../types";
 import { isScheduleStyle } from "./schedule-layout";
 import { DEFAULT_BACKGROUND_ID } from "./brand";
+import { createDemoPricing, duplicatePricing, isPricingTable } from "./pricing";
 
 export const TEMPLATE_NAMES = {
   schedule: "每周课程表",
@@ -22,11 +23,12 @@ export function createDesign(kind: TemplateKind): Design {
     id,
     kind,
     name: `${TEMPLATE_NAMES[kind]} · 演示`,
-    title: TEMPLATE_NAMES[kind],
+    title: kind === "pricing" ? "少儿舞蹈课程价目表" : TEMPLATE_NAMES[kind],
+    ...(kind === "pricing" ? { pricingTable: createDemoPricing() } : {}),
     demo: true,
-    dateRange: "2026.11.09 — 11.15",
-    note: "请提前预约课程，如有调整将另行通知。",
-    height: 1440,
+    dateRange: kind === "pricing" ? "" : "2026.11.09 — 11.15",
+    note: kind === "pricing" ? "" : "请提前预约课程，如有调整将另行通知。",
+    height: kind === "pricing" ? 1920 : 1440,
     layout: "editorial",
     backgroundId: DEFAULT_BACKGROUND_ID,
     logoId: null,
@@ -110,6 +112,9 @@ export function duplicateDesign(source: Design): Design {
     updatedAt: Date.now(),
     courses: d.courses.map((c) => ({ ...c, id: uid() })),
     prices: d.prices.map((p) => ({ ...p, id: uid() })),
+    ...(d.pricingTable
+      ? { pricingTable: duplicatePricing(d.pricingTable) }
+      : {}),
   };
 }
 
@@ -126,6 +131,7 @@ export function isDesign(value: unknown): value is Design {
     strings(d, ["id", "name", "title", "dateRange", "note"]) &&
     Boolean(d.id) &&
     isScheduleStyle(d.scheduleStyle) &&
+    (d.pricingTable === undefined || isPricingTable(d.pricingTable)) &&
     ["schedule", "pricing", "event"].includes(String(d.kind)) &&
     ["editorial", "airy"].includes(String(d.layout)) &&
     [1080, 1440, 1920].includes(Number(d.height)) &&

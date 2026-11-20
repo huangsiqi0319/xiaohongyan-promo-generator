@@ -21,6 +21,46 @@ export interface Price {
   validity: string;
   note: string;
 }
+export interface PricingColumn {
+  id: string;
+  label: string;
+  enabled: boolean;
+  weight: number;
+}
+export interface PricingRow {
+  id: string;
+  enabled?: boolean;
+  cells: Record<string, string>;
+  gift: string;
+  note: string;
+  showGift: boolean;
+  showNote: boolean;
+}
+export interface PricingSection {
+  id: string;
+  enabled: boolean;
+  columns: PricingColumn[];
+  rows: PricingRow[];
+  showGifts: boolean;
+  showRowNotes: boolean;
+  showNote: boolean;
+  noteTitle: string;
+  note: string;
+}
+export interface PricingRemark {
+  id: string;
+  enabled: boolean;
+  title: string;
+  text: string;
+}
+export interface PricingTable {
+  currencyLabel: string;
+  showCurrency: boolean;
+  showDate: boolean;
+  showFooterNote: boolean;
+  sections: PricingSection[];
+  remarks: PricingRemark[];
+}
 export interface EventInfo {
   subtitle: string;
   description: string;
@@ -33,6 +73,7 @@ export interface EventInfo {
 }
 export interface Design {
   scheduleStyle?: ScheduleStyle;
+  pricingTable?: PricingTable;
   id: string;
   kind: TemplateKind;
   name: string;

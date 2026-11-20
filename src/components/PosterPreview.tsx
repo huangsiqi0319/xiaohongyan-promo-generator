@@ -16,6 +16,10 @@ import {
 } from "lucide-react";
 import type { AssetView, Design, RenderResult } from "../types";
 import { renderPoster } from "../lib/render";
+import {
+  getPricingVisibleText,
+  hasVisiblePricingContent,
+} from "../lib/pricing-layout";
 
 export interface PosterHandle {
   exportPNG: () => Promise<Blob>;
@@ -175,7 +179,9 @@ export const PosterPreview = forwardRef<PosterHandle, Props>(
             <span className="caption-separator">/</span> 高清 PNG
           </span>
           <span>
-            {design.kind === "schedule" && status && !status.error
+            {(design.kind === "schedule" || design.kind === "pricing") &&
+            status &&
+            !status.error
               ? `正文 ${status.bodyFont} px · `
               : ""}
             预览即导出效果
@@ -194,6 +200,11 @@ export const PosterPreview = forwardRef<PosterHandle, Props>(
             </div>
           </div>
         )}
+        {design.kind === "pricing" && !hasVisiblePricingContent(design) && (
+          <p className="original-note">
+            尚无显示的价目内容，可开启分区或添加说明。此提示不会出现在导出图片中。
+          </p>
+        )}
         {!design.backgroundId && (
           <div className="original-note">
             当前使用雾白底。前往「品牌素材」导入你的湖面羽毛原图，保留原有艺术质感。
@@ -202,7 +213,9 @@ export const PosterPreview = forwardRef<PosterHandle, Props>(
         <details className="sr-only">
           <summary>预览文字内容</summary>
           <p>
-            {design.title} {design.dateRange} {design.note}
+            {design.kind === "pricing"
+              ? ""
+              : `${design.title} ${design.dateRange} ${design.note}`}
           </p>
           {design.kind === "schedule" ? (
             design.courses.map((c) => (
@@ -211,11 +224,8 @@ export const PosterPreview = forwardRef<PosterHandle, Props>(
               </p>
             ))
           ) : design.kind === "pricing" ? (
-            design.prices.map((p) => (
-              <p key={p.id}>
-                {p.category} {p.name} {p.single} {p.packagePrice} {p.sessions}{" "}
-                {p.offer} {p.validity} {p.note}
-              </p>
+            getPricingVisibleText(design).map((value, i) => (
+              <p key={i}>{value}</p>
             ))
           ) : (
             <p>{Object.values(design.event).join(" ")}</p>

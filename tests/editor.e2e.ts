@@ -57,7 +57,9 @@ test("编辑、自动保存、多项目和恢复前次", async ({ page }) => {
     "秋日身韵课程表",
   );
   await page.getByRole("button", { name: "课程价目表", exact: true }).click();
-  await expect(page.getByLabel("课程 1 名称")).toHaveValue("中国古典舞");
+  await expect(
+    page.getByLabel("分区 1 项目 1 第 1 列", { exact: true }),
+  ).toHaveValue("体验课");
   await page.getByLabel("项目名称", { exact: true }).fill("正式价目项目");
   await page.reload();
   await expect(page.getByLabel("项目名称", { exact: true })).toHaveValue(
@@ -221,16 +223,33 @@ test("六张原图批量上传、像素保留、刷新恢复与完整备份迁�
   await ctx.close();
 });
 
-test("价目项目排序、添加删除，三项演示可导出方形", async ({ page }) => {
+test("价目项目排序、添加删除，精简分区可导出方形", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "课程价目表", exact: true }).click();
-  await page.getByRole("button", { name: "下移价格 1" }).click();
-  const first = page.getByLabel("课程 1 名称");
-  await page.locator(".edit-item").first().locator("summary").click();
-  await expect(first).toHaveValue("民族民间舞");
-  await page.getByRole("button", { name: "添加价格项目", exact: true }).click();
-  await expect(page.getByRole("button", { name: /删除价格 / })).toHaveCount(4);
-  await page.getByRole("button", { name: "删除价格 4", exact: true }).click();
+  await page
+    .getByRole("button", { name: "下移分区 1 项目 1", exact: true })
+    .click();
+  await page
+    .locator(".pricing-rows .pricing-row")
+    .first()
+    .locator("summary")
+    .click();
+  await expect(
+    page.getByLabel("分区 1 项目 1 第 1 列", { exact: true }),
+  ).toHaveValue("次卡");
+  await page
+    .getByRole("button", { name: "分区 1 添加项目", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: /删除分区 1 项目 / }),
+  ).toHaveCount(6);
+  for (const i of [6, 5, 4])
+    await page
+      .getByRole("button", { name: `删除分区 1 项目 ${i}`, exact: true })
+      .click();
+  for (const i of [2, 3])
+    await page.getByLabel(`显示分区 ${i}`, { exact: true }).uncheck();
+  await page.getByLabel("显示说明 1", { exact: true }).uncheck();
   await page.getByLabel("导出尺寸").selectOption("1080");
   await expect(
     page.getByRole("button", { name: "导出高清 PNG" }),
@@ -348,7 +367,7 @@ test("长价格类别不会侵入金额列", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "课程价目表", exact: true }).click();
   await page
-    .getByLabel("价格 1 类别")
+    .getByLabel("分区 1 第 1 列表头", { exact: true })
     .fill("成人中国古典舞基础训练与身韵专项常规课程");
   await expect(
     page.getByRole("button", { name: "导出高清 PNG" }),

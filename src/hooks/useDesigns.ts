@@ -78,7 +78,7 @@ export function useDesigns() {
       p.backgroundId = source.backgroundId;
       p.logoId = source.logoId;
       p.mist = source.mist;
-      p.height = source.height;
+      p.height = kind === "pricing" ? 1920 : source.height;
       p.layout = source.layout;
     }
     commit({ ...s, projects: [...s.projects, p], activeId: p.id });
