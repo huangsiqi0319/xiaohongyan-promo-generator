@@ -46,4 +46,4 @@
 **Files:** README.md、docs/VALIDATION.md；不新增外部服务。
 - [x] npm test、Pages 子路径生产构建、npm run test:e2e 全通过；查看真实手机编辑与预览截图。
 - [x] 一次独立只读审查，重要发现以回归测试修复。
-- [ ] 提交推送、手动 Pages 工作流、线上资产核对后使用原网址交付。
+- [x] 提交推送、手动 Pages 工作流、线上资产核对后使用原网址交付。

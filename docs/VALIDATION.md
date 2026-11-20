@@ -91,3 +91,5 @@ GitHub Pages：https://huangsiqi0319.github.io/xiaohongyan-promo-generator/
 42项单元测试、35项Chromium浏览器测试、类型检查与Pages子路径构建通过。新增回归覆盖编辑/隐藏/排序、列ID与数据关联、逐行赠品备注保存、预览返回位置；独立审查发现固定表头透明、长英文表头撑宽固定列以及连续弹窗关闭后焦点丢失，均先复现失败后修复，包含真实指针点击价格框及Escape/完成/点遮罩返回焦点的检查。
 
 测试命令曾同时使用相同trace目录导致文件冲突；最终全量验收改为串行，独立输出至/tmp/xhy-compact-final35，35项全部通过。Safari实机仍未验证；本轮不改存储模式和导出流程。
+
+发布记录：Pages工作流44749588684成功，应用提交0400fc0e7e4dfdb8de7d5fe9c85cc659abdbee50。公网JS/CSS通过TLS校验取回，与本次测试后的dist资源SHA-256一致。交付地址：https://huangsiqi0319.github.io/xiaohongyan-promo-generator/?v=20261120-editor 。
