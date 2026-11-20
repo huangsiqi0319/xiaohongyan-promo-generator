@@ -78,3 +78,5 @@ GitHub Pages：https://huangsiqi0319.github.io/xiaohongyan-promo-generator/
 42项单元测试、28项Chromium端到端测试，以及类型检查和Pages子路径生产构建通过。验证隐藏与恢复、全隐藏空态、复制独立、备份导入独立浏览器后保留设置、六张背景均有不同成图、遮罩裁切刷新保留、三尺寸真实PNG与Canvas字节完全一致。完整九行模板适合长图，方形通过精简内容验证；过量内容或窄列明确提示并阻止导出，字号不低于22px。
 
 独立只读审查发现逐行隐藏缺失、缺少单元格的损坏备份误接受、空类别与显式“课程”类别合并。先补失败回归后修复；并将旧结构ID加上项目归属、将空内容编辑提示移到Canvas外。最终全量回归通过。额外真实Canvas绘字观测验证价目仅使用课表的#514b48/#777571及相同Noto字体，未保留绿色块或反白文字。Safari实机与操作系统相册行为仍未做实机验证，本轮未接入云同步。
+
+发布记录：GitHub Pages 工作流44744512331成功，应用提交891bbc6e68b74682fb8a050b478f8111c2cb1fd8。通过保留TLS校验的HTTPS请求核对公网首页所引用的JS/CSS SHA-256，与本次通过测试的dist资源完全相同。交付网址：https://huangsiqi0319.github.io/xiaohongyan-promo-generator/?v=20261120 。

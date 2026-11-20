@@ -60,5 +60,5 @@
 - [x] 查看真实原图上的 1920/1440 价目与移动界面截图，验证开启/关闭后版面，不以 AI 样稿替代实际输出。
 - [x] `npm test`、`npm run build -- --base=/xiaohongyan-promo-generator/`、`npm run test:e2e` 全通过。
 - [x] 一次独立只读代码审查；重要发现补回归再修复。
-- [ ] 更新使用说明与验证结果；提交，推 main，手动 Pages 工作流；核对 head_sha 与线上 JS/CSS hash。
-- [ ] 用原网址交付，说明可见功能与实际限制。
+- [x] 更新使用说明与验证结果；提交，推 main，手动 Pages 工作流；核对 head_sha 与线上 JS/CSS hash。
+- [x] 用原网址交付，说明可见功能与实际限制。
