@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
+import { pricingRowDetails, pricingSectionOptions } from "./pricing-helpers";
 
 async function pricing(page: Page) {
   await page.goto("/");
@@ -113,6 +114,7 @@ test("添加列、分区与补充说明，自由开关保留内容", async ({ pa
   await page
     .getByLabel("分区 1 项目 1 第 5 列", { exact: true })
     .fill("新生体验");
+  await pricingSectionOptions(page);
   await page.getByLabel("分区 1 显示赠品", { exact: true }).uncheck();
   await page.getByLabel("分区 1 显示附注", { exact: true }).uncheck();
   await page.getByLabel("显示分区 2", { exact: true }).uncheck();
@@ -280,6 +282,7 @@ test("新价目保留六图选择、遮罩与裁切，实际样张及三尺寸PN
   for (const i of [2, 3])
     await page.getByLabel(`显示分区 ${i}`, { exact: true }).uncheck();
   await page.getByLabel("显示说明 1", { exact: true }).uncheck();
+  await pricingSectionOptions(page);
   await page.getByLabel("分区 1 显示赠品", { exact: true }).uncheck();
   await page.getByLabel("分区 1 显示附注", { exact: true }).uncheck();
   for (const height of [1920, 1440, 1080]) {
@@ -309,14 +312,19 @@ test("长单元格及说明不截断，过量内容阻止导出且复制保留�
   await page
     .getByLabel("分区 1 项目 1 第 1 列", { exact: true })
     .fill("中国古典舞基础与身韵专项训练");
+  await pricingRowDetails(page);
   await page
     .getByLabel("分区 1 项目 1 赠品", { exact: true })
     .fill("舞蹈袜、训练带及入门练习手册一套");
+  await page.getByRole("button", { name: "完成", exact: true }).click();
   await ready(page);
   await page.getByRole("button", { name: "复制当前设计" }).click();
+  await pricingRowDetails(page);
   await expect(
     page.getByLabel("分区 1 项目 1 赠品", { exact: true }),
   ).toHaveValue("舞蹈袜、训练带及入门练习手册一套");
+  await page.getByRole("button", { name: "完成", exact: true }).click();
+  await pricingSectionOptions(page);
   await page
     .getByLabel("分区 1 附注内容", { exact: true })
     .fill("过长的课程有效期及补课安排说明".repeat(80));

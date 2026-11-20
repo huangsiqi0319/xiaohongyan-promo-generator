@@ -58,6 +58,22 @@ export default function App() {
     null,
   );
   const [recoveryMessage, setRecoveryMessage] = useState("");
+  const [quickPreview, setQuickPreview] = useState(false);
+  const mainPanel = useRef<HTMLElement>(null);
+  const editorScroll = useRef(0);
+  useEffect(() => setQuickPreview(false), [d.id, panel]);
+  function toggleQuickPreview() {
+    if (quickPreview) {
+      window.scrollTo({ top: editorScroll.current, behavior: "auto" });
+      setQuickPreview(false);
+    } else {
+      editorScroll.current = window.scrollY;
+      mainPanel.current
+        ?.querySelector(".preview-toolbar")
+        ?.scrollIntoView({ block: "start", behavior: "auto" });
+      setQuickPreview(true);
+    }
+  }
   const preview = useRef<PosterHandle>(null),
     importInput = useRef<HTMLInputElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -208,7 +224,9 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell ${d.kind === "pricing" && panel === "editor" ? "pricing-edit-mode" : ""}`}
+    >
       <header className="topbar">
         <a
           className="brand"
@@ -540,7 +558,7 @@ export default function App() {
             </>
           )}
         </aside>
-        <main className="main-panel">
+        <main className="main-panel" ref={mainPanel} id="material-preview">
           <div className="main-controls">
             <span>
               <span className="project-dot" />
@@ -596,6 +614,19 @@ export default function App() {
           />
         </main>
       </div>
+      {d.kind === "pricing" && panel === "editor" && (
+        <div className="pricing-preview-bar">
+          <span>{quickPreview ? "回到刚才编辑的位置" : "修改后实时预览"}</span>
+          <button
+            className="primary-button"
+            aria-controls={quickPreview ? undefined : "material-preview"}
+            onClick={toggleQuickPreview}
+          >
+            <Image size={16} />
+            {quickPreview ? "返回编辑" : "查看成图"}
+          </button>
+        </div>
+      )}
       {toast && (
         <div className="toast" role="status">
           <Check size={17} />

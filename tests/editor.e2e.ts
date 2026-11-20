@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { pricingAction } from "./pricing-helpers";
 
 test("六张内置原图可直接切换、刷新保留并生成不同的 PNG", async ({ page }) => {
   await page.goto("/");
@@ -226,14 +227,7 @@ test("六张原图批量上传、像素保留、刷新恢复与完整备份迁�
 test("价目项目排序、添加删除，精简分区可导出方形", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "课程价目表", exact: true }).click();
-  await page
-    .getByRole("button", { name: "下移分区 1 项目 1", exact: true })
-    .click();
-  await page
-    .locator(".pricing-rows .pricing-row")
-    .first()
-    .locator("summary")
-    .click();
+  await pricingAction(page, "分区 1 项目 1", "下移");
   await expect(
     page.getByLabel("分区 1 项目 1 第 1 列", { exact: true }),
   ).toHaveValue("次卡");
@@ -241,12 +235,10 @@ test("价目项目排序、添加删除，精简分区可导出方形", async ({
     .getByRole("button", { name: "分区 1 添加项目", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: /删除分区 1 项目 / }),
+    page.locator(".pricing-data-table").first().locator("tbody tr"),
   ).toHaveCount(6);
   for (const i of [6, 5, 4])
-    await page
-      .getByRole("button", { name: `删除分区 1 项目 ${i}`, exact: true })
-      .click();
+    await pricingAction(page, `分区 1 项目 ${i}`, "删除");
   for (const i of [2, 3])
     await page.getByLabel(`显示分区 ${i}`, { exact: true }).uncheck();
   await page.getByLabel("显示说明 1", { exact: true }).uncheck();

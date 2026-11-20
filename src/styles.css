@@ -555,7 +555,7 @@ button:not(:disabled):hover {
 .details-chevron {
   color: #9da693;
 }
-.edit-item[open] .details-chevron {
+.edit-item[open] > summary .details-chevron {
   transform: rotate(180deg);
 }
 .edit-item summary .icon-button {
@@ -606,7 +606,8 @@ button:not(:disabled):hover {
 .check-field + .section-help {
   margin-top: 0;
 }
-.editor-bottom {
+.editor-bottom,
+.pricing-preview-bar {
   padding: 14px 24px;
   background: #f6f7f3;
   border-top: 1px solid #e4e9e5;
@@ -678,7 +679,7 @@ button:not(:disabled):hover {
   gap: 8px;
   align-items: center;
 }
-.pricing-column-top input:not([type="checkbox"]) {
+.pricing-column-top > input:not([type="checkbox"]) {
   min-width: 0;
   width: 0;
   flex: 1;
@@ -747,7 +748,7 @@ button:not(:disabled):hover {
   width: 100%;
 }
 @media (max-width: 760px) {
-  .pricing-column-top input:not([type="checkbox"]),
+  .pricing-column-top > input:not([type="checkbox"]),
   .pricing-cell-fields .field input {
     font-size: 16px;
   }
@@ -1996,5 +1997,178 @@ body:has(.utility-dialog[open]) {
   * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* Compact pricing layout. Existing type, color, field and border rules remain in use. */
+.pricing-column-head,
+.pricing-column-top {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 62px 24px;
+  align-items: center;
+  gap: 6px;
+}
+.pricing-column-head {
+  padding: 0 0 7px;
+}
+.pricing-column-head > span {
+  white-space: nowrap;
+}
+.pricing-columns {
+  gap: 0;
+}
+.pricing-column {
+  padding: 5px 0;
+}
+.pricing-column-top > input:not([type="checkbox"]) {
+  width: 100%;
+  height: 38px;
+  padding: 6px 8px;
+}
+.pricing-column-width {
+  margin: 0;
+  display: block;
+}
+.pricing-column-width input {
+  height: 38px;
+  max-width: 100%;
+}
+.pricing-meta > summary,
+.pricing-section-options > summary {
+  min-height: 44px;
+  padding-block: 9px;
+}
+.pricing-meta {
+  padding: 0;
+}
+.pricing-menu-actions {
+  display: grid;
+  gap: 10px;
+}
+.pricing-grid-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: auto;
+}
+.pricing-data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  width: calc(226px + var(--pricing-value-columns) * 110px);
+  min-width: 100%;
+  background: #fcfcf8;
+}
+.pricing-data-table th {
+  text-align: left;
+  font-weight: 400;
+  padding: 8px 5px;
+  overflow-wrap: anywhere;
+}
+.pricing-data-table thead,
+.pricing-data-table thead tr {
+  background: inherit;
+}
+.pricing-data-table th:first-child,
+.pricing-data-table th:last-child,
+.pricing-data-table td:first-child {
+  white-space: nowrap;
+  padding-inline: 2px;
+}
+.pricing-data-table th small {
+  display: block;
+}
+.pricing-data-table td {
+  padding: 4px 5px;
+}
+.pricing-data-table th:first-child,
+.pricing-data-table td:first-child {
+  width: 38px;
+  min-width: 38px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: inherit;
+}
+.pricing-data-table th:nth-child(2),
+.pricing-data-table td:nth-child(2) {
+  width: 150px;
+  min-width: 150px;
+  position: sticky;
+  left: 38px;
+  z-index: 1;
+  background: inherit;
+}
+.pricing-data-table th:last-child,
+.pricing-data-table td:last-child {
+  width: 38px;
+  min-width: 38px;
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: inherit;
+}
+.pricing-data-table th:not(:first-child):not(:nth-child(2)):not(:last-child),
+.pricing-data-table td:not(:first-child):not(:nth-child(2)):not(:last-child) {
+  width: 110px;
+  min-width: 110px;
+}
+.pricing-data-table .pricing-cell-fields {
+  display: block;
+}
+.pricing-data-table .pricing-grid-field {
+  margin: 0;
+  position: relative;
+}
+.pricing-data-table .pricing-grid-field input {
+  padding-inline: 8px;
+}
+.pricing-extra-dialog .item-fields {
+  padding: 0;
+  border: 0;
+}
+.pricing-preview-bar {
+  display: none;
+}
+@media (max-width: 760px) {
+  .pricing-edit-mode {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+  .pricing-preview-bar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    min-height: 62px;
+  }
+  .pricing-preview-bar .primary-button {
+    min-height: 42px;
+  }
+  .pricing-column-head {
+    grid-template-columns: 28px minmax(0, 1fr) 62px 24px;
+  }
+  .pricing-data-table th:first-child,
+  .pricing-data-table td:first-child,
+  .pricing-data-table th:last-child,
+  .pricing-data-table td:last-child {
+    width: 28px;
+    min-width: 28px;
+  }
+  .pricing-data-table {
+    width: calc(164px + var(--pricing-value-columns) * 94px);
+  }
+  .pricing-data-table th:nth-child(2),
+  .pricing-data-table td:nth-child(2) {
+    width: 108px;
+    min-width: 108px;
+    left: 28px;
+  }
+  .pricing-data-table th:not(:first-child):not(:nth-child(2)):not(:last-child),
+  .pricing-data-table td:not(:first-child):not(:nth-child(2)):not(:last-child) {
+    width: 94px;
+    min-width: 94px;
   }
 }
